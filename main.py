@@ -53,7 +53,7 @@ def start_upload(request: UploadRequest):
 
         # Esperar latencia antes del siguiente envío
         if i < num_files - 1:
-            time.sleep(request.latency)
+            time.sleep(request.latency/1000) #el parámetro de sleep está en segundos
 
     return {
         "message": f"{num_files} archivos subidos correctamente",
