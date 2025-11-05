@@ -19,13 +19,13 @@ class UploadRequest(BaseModel):
     folder_name: str       # Carpeta principal
     subfolder_name: str    # Subcarpeta específica
     rows: int              # Número de filas por archivo
-    latency: int           # Intervalo entre envíos (segundos)
+    latency: int           # Intervalo entre envíos (milisegundos)
     duration: int          # Tiempo total (segundos)
 
 @app.post("/start-upload")
 def start_upload(request: UploadRequest):
     blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)
-    num_files = request.duration // request.latency
+    num_files = request.duration // (request.latency *1000)
     uploaded_files = []
 
     for i in range(num_files):
