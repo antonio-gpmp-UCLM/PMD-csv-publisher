@@ -27,8 +27,12 @@ app = FastAPI()
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
 async def get_api_key(api_key: str = Depends(api_key_header)):
+    if not API_KEY:
+        raise HTTPException(status_code=401, detail="No api key")
+    else:
+        raise HTTPException(status_code=401, detail=API_KEY)
     if api_key != API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid or missing API Key"+ " " + API_KEY)
+        raise HTTPException(status_code=401, detail="Invalid or missing API Key")
     return api_key
 
 # class UploadRequest(BaseModel):
