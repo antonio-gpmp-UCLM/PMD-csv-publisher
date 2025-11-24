@@ -32,7 +32,7 @@ async def get_api_key(api_key: str = Depends(api_key_header)):
     return api_key
 
 
-@app.route("/get-env")
+@app.get("/get-env")
 def get_env():
     valor =  = os.getenv("API_KEY", "nodefinida")
     return f"Valor de la variable: {valor}"
