@@ -7,7 +7,7 @@ name: Build and deploy Python app to Azure Web App - csvpublisher
 on:
   push:
     branches:
-      - branch-for-csv
+      - branch-for-csv-apikey
   workflow_dispatch:
 
 jobs:
@@ -73,4 +73,5 @@ jobs:
         with:
           app-name: 'csvpublisher'
           slot-name: 'Production'
+
           
