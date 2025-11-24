@@ -31,16 +31,18 @@ async def get_api_key(api_key: str = Depends(api_key_header)):
         raise HTTPException(status_code=401, detail="Invalid or missing API Key")
     return api_key
 
-class UploadRequest(BaseModel):
-    folder_name: str       # Carpeta principal
-    subfolder_name: str    # Subcarpeta específica
-    rows: int              # Número de filas por archivo
-    latency: int           # Intervalo entre envíos (milisegundos)
-    duration: int          # Tiempo total (segundos)
-    api_key: str = Depends(get_api_key)
+# class UploadRequest(BaseModel):
+#    folder_name: str       # Carpeta principal
+#    subfolder_name: str    # Subcarpeta específica
+#    rows: int              # Número de filas por archivo
+#    latency: int           # Intervalo entre envíos (milisegundos)
+#    duration: int          # Tiempo total (segundos)
     
-@app.post("/start-upload")
-def start_upload(request: UploadRequest):
+@app.post("/send-data")
+async def send_data(folder_name: str, subfolder_name: str, rows: int, latency: int, duration: int, api_key: str = Depends(get_api_key)):
+    
+# @app.post("/start-upload")
+# def start_upload(request: UploadRequest,api_key: str = Depends(get_api_key)):
     blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)
     num_files = request.duration // (request.latency *1000)
     uploaded_files = []
