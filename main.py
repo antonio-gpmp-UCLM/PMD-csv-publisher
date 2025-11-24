@@ -1,5 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request, Depends
+from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel
+import asyncio
+import requests
 from azure.storage.blob import BlobServiceClient
 import pandas as pd
 import random
@@ -8,12 +11,25 @@ import io
 import time
 import os
 
+
 # Configuración Azure como variables de entorno
 AZURE_CONNECTION_STRING = os.getenv("AZURE_CONNECTION_STRING") 
 CONTAINER_NAME =  os.getenv("AZURE_CONTAINER_NAME") 
-#CONTAINER_NAME =  "contenedor-demo"
+
+# variable de entorno definida en la Web App en Azure para ser utilizada por la api para comprobar si está autorizado
+API_KEY = os.getenv("API_KEY")
+# api_key utilizada en la invocación
+API_KEY_NAME = "X-API-Key"
 
 app = FastAPI()
+
+# --- Definir esquema de seguridad ---
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+async def get_api_key(api_key: str = Depends(api_key_header)):
+    if api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid or missing API Key")
+    return api_key
 
 class UploadRequest(BaseModel):
     folder_name: str       # Carpeta principal
@@ -21,7 +37,8 @@ class UploadRequest(BaseModel):
     rows: int              # Número de filas por archivo
     latency: int           # Intervalo entre envíos (milisegundos)
     duration: int          # Tiempo total (segundos)
-
+    api_key: str = Depends(get_api_key)
+    
 @app.post("/start-upload")
 def start_upload(request: UploadRequest):
     blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)
@@ -43,8 +60,11 @@ def start_upload(request: UploadRequest):
         csv_buffer = io.StringIO()
         df.to_csv(csv_buffer, index=False)
 
-        # Construir la ruta completa: carpeta/subcarpeta/archivo.csv
-        file_name = f"{request.folder_name}/{request.subfolder_name}/datos_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{i}.csv"
+        # Construir la ruta completa: carpeta/subcarpeta/archivo.csv si
+        if not request.subfolder_name: #si no hay subcarpeta lo guarda en la ruta principal
+            file_name = f"{request.folder_name}/datos_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{i}.csv"
+        else:
+            file_name = f"{request.folder_name}/{request.subfolder_name}/datos_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{i}.csv"
 
         # Subir a Azure Blob Storage
         blob_client = blob_service_client.get_blob_client(container=CONTAINER_NAME, blob=file_name)
