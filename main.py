@@ -39,23 +39,24 @@ class UploadRequest(BaseModel):
 
 @app.post("/start-upload", dependencies=[Depends(verificar_api_key)])
 def start_upload(request: UploadRequest):
-    errores_variables_entorno="Defina en su API las siguientes variables de entorno:"
+    # creamos el cliente
+    errores_variables_entorno=None
     if AZURE_CONNECTION_STRING is None:
         errores_variables_entorno=errores_variables_entorno+" AZURE_CONNECTION_STRING "
     
     if CONTAINER_NAME is None:
         errores_variables_entorno=errores_variables_entorno+" CONTAINER_NAME "
 
-    return {
-        "message": f"{errores_variables_entorno}",
-    }
-    # creamos el cliente
+    if errores_variables_entorno is not None:
+        return {
+            "message": f"Defina en su API las siguientes variables de entorno: {errores_variables_entorno}",
+        }
+
     blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)
     
     #asignamos por defecto cada 1000 ms
     request.latency=1000 if request.latency==0 else request.latency
 
-    print(request.latency )
 
     #asignamos por defecto que la duración son 1 segundos
     request.duration=1 if request.duration==0 else request.duration
@@ -68,7 +69,9 @@ def start_upload(request: UploadRequest):
 
 
     #asignamos por defecto carpeta donde se guardara
-    request.folder_name="spo2-temperatura" if request.folder_name is None else request.folder_name
+    request.folder_name="spo2temperatura" if request.folder_name is None or request.folder_name=="string" else request.folder_name
+
+    request.subfolder_name= None if request.subfolder_name == "string" else request.subfolder_name
     
     num_files = math.trunc(request.duration / (request.latency /1000))
     
@@ -96,8 +99,6 @@ def start_upload(request: UploadRequest):
         csv_buffer = io.StringIO()
         df.to_csv(csv_buffer, index=False)
 
-        # Construir la ruta completa: carpeta/subcarpeta/archivo.csv
-        file_name = f"{request.folder_name}/{request.subfolder_name}/datos_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{i}.csv"
 
         # Construir la ruta completa: carpeta/subcarpeta/archivo.csv 
         if not request.subfolder_name: #si no hay subcarpeta lo guarda en la ruta principal
