@@ -26,10 +26,15 @@ app = FastAPI()
 # --- Definir esquema de seguridad ---
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
-async def get_api_key(api_key: str = Depends(api_key_header)):
-    if api_key != API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid or missing API Key")
-    return api_key
+# async def get_api_key(api_key: str = Depends(api_key_header)):
+#    if api_key != API_KEY:
+#        raise HTTPException(status_code=401, detail="Invalid or missing API Key")
+#    return api_key
+
+async def verify_api_key(x_api_key: APIKeyHeader(name=API_KEY_NAME, auto_error=False)):
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API Key")
+    return True
 
 
 # @app.get("/get-env")
@@ -49,7 +54,7 @@ async def get_api_key(api_key: str = Depends(api_key_header)):
 #async def send_data(folder_name: str, subfolder_name: str, rows: int, latency: int, duration: int, api_key: str = Depends(get_api_key)):
     
 @app.post("/start-upload")
-def start_upload(request: UploadRequest,api_key: str = Depends(get_api_key)):
+def start_upload(request: UploadRequest, authorized: bool = Depends(verify_api_key)):
     blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)
     num_files = request.duration // (request.latency *1000)
     uploaded_files = []
