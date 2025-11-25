@@ -39,6 +39,16 @@ class UploadRequest(BaseModel):
 
 @app.post("/start-upload", dependencies=[Depends(verificar_api_key)])
 def start_upload(request: UploadRequest):
+    errores_variables_entorno="Defina en su API las siguientes variables de entorno:"
+    if AZURE_CONNECTION_STRING is None:
+        errores_variables_entorno=errores_variables_entorno+" AZURE_CONNECTION_STRING "
+    
+    if CONTAINER_NAME is None:
+        errores_variables_entorno=errores_variables_entorno+" CONTAINER_NAME "
+
+    return {
+        "message": f"{errores_variables_entorno}",
+    }
     # creamos el cliente
     blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)
     
