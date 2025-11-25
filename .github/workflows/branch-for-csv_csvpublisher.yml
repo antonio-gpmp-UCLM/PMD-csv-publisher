@@ -32,7 +32,7 @@ jobs:
           source antenv/bin/activate
           pip install -r requirements.txt
       
-      # 4. (Opcional) Compilar bytecode para verificar sintaxis
+      # Compilar bytecode para verificar sintaxis
       - name: Compile Python bytecode
         run: |
           python -m compileall .
@@ -81,3 +81,4 @@ jobs:
           slot-name: 'Production'
 
           
+
