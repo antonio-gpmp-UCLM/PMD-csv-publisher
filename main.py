@@ -21,6 +21,7 @@ class UploadRequest(BaseModel):
     rows: int              # Número de filas por archivo
     latency: int           # Intervalo entre envíos (milisegundos)
     duration: int          # Tiempo total (segundos)
+    id_max_paciente: int   # numero max de id de pacientes que tenemos
 
 @app.post("/start-upload")
 def start_upload(request: UploadRequest):
@@ -31,11 +32,16 @@ def start_upload(request: UploadRequest):
     for i in range(num_files):
         # Generar datos aleatorios
         data = []
+        id_max_paciente= 100 +request.rows
         for _ in range(request.rows):
-            temperatura = round(random.uniform(15, 35), 2)
-            humedad = round(random.uniform(30, 90), 2)
+            id_paciente = math.trunc(random.uniform(101, id_max_paciente))
+            if generar_error_temperatura > 90:
+  	         temperatura = round(random.uniform(-100, 100), 2)
+            else:
+             temperatura = round(random.uniform(20, 50), 2)
+            SpO2 = round(random.uniform(60, 100), 2)
             timestamp = datetime.utcnow().isoformat()
-            data.append({"timestamp": timestamp, "temperatura": temperatura, "humedad": humedad})
+            data.append({"id_paciente":id_paciente, "temperatura": temperatura, "SpO2": SpO2, "timestamp": timestamp })
 
         df = pd.DataFrame(data)
 
@@ -45,6 +51,13 @@ def start_upload(request: UploadRequest):
 
         # Construir la ruta completa: carpeta/subcarpeta/archivo.csv
         file_name = f"{request.folder_name}/{request.subfolder_name}/datos_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{i}.csv"
+
+        # Construir la ruta completa: carpeta/subcarpeta/archivo.csv 
+        if not request.subfolder_name: #si no hay subcarpeta lo guarda en la ruta principal
+            file_name = f"{request.folder_name}/datos_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{i}.csv"
+        else:
+            file_name = f"{request.folder_name}/{request.subfolder_name}/datos_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{i}.csv"
+
 
         # Subir a Azure Blob Storage
         blob_client = blob_service_client.get_blob_client(container=CONTAINER_NAME, blob=file_name)
